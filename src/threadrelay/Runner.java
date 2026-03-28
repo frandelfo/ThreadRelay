@@ -1,5 +1,8 @@
 package threadrelay;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Runner implements Runnable {
 
     public static final int SLOW    = 500;
@@ -7,15 +10,45 @@ public class Runner implements Runnable {
     public static final int FAST    = 100;
 
     private final int delay;
+    private final int id;
     private int count;
 
-    public Runner(int delay) {
+    private final List<RunnerListener> listeners = new ArrayList<>();
+
+    public Runner(int id, int delay) {
+        this.id    = id;
         this.delay = delay;
     }
+
+    // ── Gestione listener ────────────────────────────────────────────────────
+
+    public void addListener(RunnerListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeListener(RunnerListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void notifyCountUpdated() {
+        for (RunnerListener l : listeners) {
+            l.onCountUpdated(id, count);
+        }
+    }
+
+    private void notifyFinished() {
+        for (RunnerListener l : listeners) {
+            l.onRunnerFinished(id);
+        }
+    }
+
+    // ── Getter ───────────────────────────────────────────────────────────────
 
     public int getCount() {
         return count;
     }
+
+    // ── Runnable ─────────────────────────────────────────────────────────────
 
     @Override
     public void run() {
@@ -26,6 +59,8 @@ public class Runner implements Runnable {
                 Thread.currentThread().interrupt();
                 return;
             }
+            notifyCountUpdated();
         }
+        notifyFinished();
     }
 }

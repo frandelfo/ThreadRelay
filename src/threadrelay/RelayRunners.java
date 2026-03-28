@@ -3,7 +3,7 @@ package threadrelay;
 import javax.swing.*;
 import java.awt.*;
 
-public class RelayRunners extends JFrame {
+public class RelayRunners extends JFrame implements RunnerListener {
 
     // Corsie: layout null per permettere lo spostamento animato delle icone
     private final JPanel[]  trackPanels  = new JPanel[4];
@@ -99,5 +99,29 @@ public class RelayRunners extends JFrame {
         setLayout(new BorderLayout());
         add(topArea,      BorderLayout.CENTER);
         add(buttonsPanel, BorderLayout.SOUTH);
+    }
+
+    // ── RunnerListener ───────────────────────────────────────────────────────
+
+    @Override
+    public void onCountUpdated(int runnerId, int count) {
+        // Chiamato da un thread secondario: aggiornamento UI sull'EDT
+        SwingUtilities.invokeLater(() -> {
+            valueLabels[runnerId].setText(String.valueOf(count));
+
+            // Sposta l'icona proporzionalmente al conteggio (0-99)
+            int trackWidth  = trackPanels[runnerId].getWidth();
+            int iconWidth   = runnerIcons[runnerId].getWidth();
+            int x = (int) ((trackWidth - iconWidth) * (count / 99.0));
+            int y = runnerIcons[runnerId].getY();
+            runnerIcons[runnerId].setLocation(x, y);
+        });
+    }
+
+    @Override
+    public void onRunnerFinished(int runnerId) {
+        SwingUtilities.invokeLater(() ->
+            valueLabels[runnerId].setText("Fine")
+        );
     }
 }
