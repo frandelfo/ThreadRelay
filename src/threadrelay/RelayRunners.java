@@ -15,8 +15,9 @@ public class RelayRunners extends JFrame implements RunnerListener {
     private final JLabel[]  valueLabels  = new JLabel[4];
 
     // Controlli
-    final JButton startButton = new JButton("Avvia");
-    final JButton stopButton  = new JButton("Ferma");
+    final JButton    startButton = new JButton("Avvia");
+    final JButton    stopButton  = new JButton("Ferma");
+    final JComboBox<String> speedCombo = new JComboBox<>(new String[]{"Slow", "Regular", "Fast"});
 
     // Thread di coordinamento e array di tutti i runner (volatile: accesso da più thread)
     private volatile Thread   coordinatorThread;
@@ -25,10 +26,8 @@ public class RelayRunners extends JFrame implements RunnerListener {
     // Un latch per runner: viene rilasciato quando count raggiunge 90
     private CountDownLatch[] handoffLatches;
 
-    // Velocità assegnata a ciascun runner (modificabile in futuro)
-    private static final int[] DELAYS = {
-        Runner.SLOW, Runner.REGULAR, Runner.FAST, Runner.REGULAR
-    };
+    // Mappa indice combo → costante di delay
+    private static final int[] SPEED_VALUES = {Runner.SLOW, Runner.REGULAR, Runner.FAST};
 
     public RelayRunners() {
         setTitle("Relay Runners");
@@ -102,9 +101,11 @@ public class RelayRunners extends JFrame implements RunnerListener {
         topArea.add(tracksPanel, BorderLayout.CENTER);
         topArea.add(rightPanel,  BorderLayout.EAST);
 
-        // ── Area inferiore: pulsanti ─────────────────────────────────────────
+        // ── Area inferiore: combo velocità + pulsanti ────────────────────────
         stopButton.setEnabled(false);
+        speedCombo.setSelectedIndex(1); // default: Regular
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 24, 8));
+        buttonsPanel.add(speedCombo);
         buttonsPanel.add(startButton);
         buttonsPanel.add(stopButton);
 
@@ -123,6 +124,7 @@ public class RelayRunners extends JFrame implements RunnerListener {
     private void startRelay() {
         startButton.setEnabled(false);
         stopButton.setEnabled(true);
+        speedCombo.setEnabled(false);
         resetUI();
 
         // Inizializza un latch per ognuno dei primi 3 runner (il 4° non ha successore)
@@ -161,13 +163,15 @@ public class RelayRunners extends JFrame implements RunnerListener {
             SwingUtilities.invokeLater(() -> {
                 startButton.setEnabled(true);
                 stopButton.setEnabled(false);
+                speedCombo.setEnabled(true);
             });
         });
         coordinatorThread.start();
     }
 
     private void startRunner(int i) {
-        Runner runner = new Runner(i, DELAYS[i]);
+        int delay = SPEED_VALUES[speedCombo.getSelectedIndex()];
+        Runner runner = new Runner(i, delay);
         runner.addListener(this);
         runnerThreads[i] = new Thread(runner);
         runnerThreads[i].start();
@@ -178,6 +182,7 @@ public class RelayRunners extends JFrame implements RunnerListener {
         interruptAllRunners();
         startButton.setEnabled(true);
         stopButton.setEnabled(false);
+        speedCombo.setEnabled(true);
     }
 
     private void interruptAllRunners() {
