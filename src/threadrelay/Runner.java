@@ -48,6 +48,27 @@ public class Runner implements Runnable {
         return count;
     }
 
+    // ── Sospensione / ripresa ─────────────────────────────────────────────────
+
+    private boolean suspended = false;
+
+    public synchronized void suspend() {
+        suspended = true;
+    }
+
+    public synchronized void resume() {
+        suspended = false;
+        notifyAll();
+    }
+
+    // Controlla il flag di sospensione: se attivo, blocca il thread finché non
+    // viene chiamato resume(). Il lock viene rilasciato durante l'attesa.
+    private synchronized void checkSuspended() throws InterruptedException {
+        while (suspended) {
+            wait();
+        }
+    }
+
     // ── Runnable ─────────────────────────────────────────────────────────────
 
     @Override
@@ -55,6 +76,7 @@ public class Runner implements Runnable {
         for (count = 0; count <= 99; count++) {
             try {
                 Thread.sleep(delay);
+                checkSuspended();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;

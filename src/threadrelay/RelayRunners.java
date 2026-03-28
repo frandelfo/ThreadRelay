@@ -15,13 +15,16 @@ public class RelayRunners extends JFrame implements RunnerListener {
     private final JLabel[]  valueLabels  = new JLabel[4];
 
     // Controlli
-    final JButton    startButton = new JButton("Avvia");
-    final JButton    stopButton  = new JButton("Ferma");
+    final JButton    startButton   = new JButton("Avvia");
+    final JButton    suspendButton = new JButton("Sospende");
+    final JButton    resumeButton  = new JButton("Riprende");
+    final JButton    stopButton    = new JButton("Ferma");
     final JComboBox<String> speedCombo = new JComboBox<>(new String[]{"Slow", "Regular", "Fast"});
 
     // Thread di coordinamento e array di tutti i runner (volatile: accesso da più thread)
     private volatile Thread   coordinatorThread;
     private volatile Thread[] runnerThreads = new Thread[4];
+    private volatile Runner[] activeRunners  = new Runner[4];
 
     // Un latch per runner: viene rilasciato quando count raggiunge 90
     private CountDownLatch[] handoffLatches;
@@ -103,15 +106,21 @@ public class RelayRunners extends JFrame implements RunnerListener {
 
         // ── Area inferiore: combo velocità + pulsanti ────────────────────────
         stopButton.setEnabled(false);
+        suspendButton.setEnabled(false);
+        resumeButton.setEnabled(false);
         speedCombo.setSelectedIndex(1); // default: Regular
-        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 24, 8));
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 16, 8));
         buttonsPanel.add(speedCombo);
         buttonsPanel.add(startButton);
+        buttonsPanel.add(suspendButton);
+        buttonsPanel.add(resumeButton);
         buttonsPanel.add(stopButton);
 
         // ── Listener pulsanti ────────────────────────────────────────────────
-        startButton.addActionListener(e -> startRelay());
-        stopButton.addActionListener(e  -> stopRelay());
+        startButton.addActionListener(e   -> startRelay());
+        suspendButton.addActionListener(e -> suspendRelay());
+        resumeButton.addActionListener(e  -> resumeRelay());
+        stopButton.addActionListener(e    -> stopRelay());
 
         // ── Layout principale ─────────────────────────────────────────────────
         setLayout(new BorderLayout());
@@ -123,6 +132,8 @@ public class RelayRunners extends JFrame implements RunnerListener {
 
     private void startRelay() {
         startButton.setEnabled(false);
+        suspendButton.setEnabled(true);
+        resumeButton.setEnabled(false);
         stopButton.setEnabled(true);
         speedCombo.setEnabled(false);
         resetUI();
@@ -162,6 +173,8 @@ public class RelayRunners extends JFrame implements RunnerListener {
 
             SwingUtilities.invokeLater(() -> {
                 startButton.setEnabled(true);
+                suspendButton.setEnabled(false);
+                resumeButton.setEnabled(false);
                 stopButton.setEnabled(false);
                 speedCombo.setEnabled(true);
             });
@@ -171,16 +184,39 @@ public class RelayRunners extends JFrame implements RunnerListener {
 
     private void startRunner(int i) {
         int delay = SPEED_VALUES[speedCombo.getSelectedIndex()];
-        Runner runner = new Runner(i, delay);
-        runner.addListener(this);
-        runnerThreads[i] = new Thread(runner);
+        activeRunners[i] = new Runner(i, delay);
+        activeRunners[i].addListener(this);
+        runnerThreads[i] = new Thread(activeRunners[i]);
         runnerThreads[i].start();
+    }
+
+    private void suspendRelay() {
+        for (Runner r : activeRunners) {
+            if (r != null) r.suspend();
+        }
+        suspendButton.setEnabled(false);
+        resumeButton.setEnabled(true);
+    }
+
+    private void resumeRelay() {
+        for (Runner r : activeRunners) {
+            if (r != null) r.resume();
+        }
+        suspendButton.setEnabled(true);
+        resumeButton.setEnabled(false);
     }
 
     private void stopRelay() {
         if (coordinatorThread != null) coordinatorThread.interrupt();
+        // Se i runner sono sospesi, li risveglia prima di interromperli
+        // così escono da wait() e gestiscono l'InterruptedException
+        for (Runner r : activeRunners) {
+            if (r != null) r.resume();
+        }
         interruptAllRunners();
         startButton.setEnabled(true);
+        suspendButton.setEnabled(false);
+        resumeButton.setEnabled(false);
         stopButton.setEnabled(false);
         speedCombo.setEnabled(true);
     }
