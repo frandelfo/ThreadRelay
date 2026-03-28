@@ -17,6 +17,15 @@ public class RelayRunners extends JFrame implements RunnerListener {
     final JButton startButton = new JButton("Avvia");
     final JButton stopButton  = new JButton("Ferma");
 
+    // Thread di coordinamento e runner attivo (volatile: accesso da più thread)
+    private volatile Thread coordinatorThread;
+    private volatile Thread currentRunnerThread;
+
+    // Velocità assegnata a ciascun runner (modificabile in futuro)
+    private static final int[] DELAYS = {
+        Runner.SLOW, Runner.REGULAR, Runner.FAST, Runner.REGULAR
+    };
+
     public RelayRunners() {
         setTitle("Relay Runners");
         setSize(700, 420);
@@ -95,10 +104,61 @@ public class RelayRunners extends JFrame implements RunnerListener {
         buttonsPanel.add(startButton);
         buttonsPanel.add(stopButton);
 
+        // ── Listener pulsanti ────────────────────────────────────────────────
+        startButton.addActionListener(e -> startRelay());
+        stopButton.addActionListener(e  -> stopRelay());
+
         // ── Layout principale ─────────────────────────────────────────────────
         setLayout(new BorderLayout());
         add(topArea,      BorderLayout.CENTER);
         add(buttonsPanel, BorderLayout.SOUTH);
+    }
+
+    // ── Logica relay ─────────────────────────────────────────────────────────
+
+    private void startRelay() {
+        startButton.setEnabled(false);
+        stopButton.setEnabled(true);
+        resetUI();
+
+        // Thread coordinatore: esegue i runner uno alla volta in sequenza
+        coordinatorThread = new Thread(() -> {
+            for (int i = 0; i < 4; i++) {
+                Runner runner = new Runner(i, DELAYS[i]);
+                runner.addListener(this);
+
+                currentRunnerThread = new Thread(runner);
+                currentRunnerThread.start();
+
+                try {
+                    currentRunnerThread.join(); // attende la fine prima di passare al successivo
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    return; // stop richiesto: esce dal ciclo
+                }
+            }
+            // Tutti e 4 i runner completati
+            SwingUtilities.invokeLater(() -> {
+                startButton.setEnabled(true);
+                stopButton.setEnabled(false);
+            });
+        });
+        coordinatorThread.start();
+    }
+
+    private void stopRelay() {
+        // Interrompe il coordinatore; il coordinatore interromperà il runner attivo
+        if (coordinatorThread != null) coordinatorThread.interrupt();
+        if (currentRunnerThread != null) currentRunnerThread.interrupt();
+        startButton.setEnabled(true);
+        stopButton.setEnabled(false);
+    }
+
+    private void resetUI() {
+        for (int i = 0; i < 4; i++) {
+            valueLabels[i].setText("0");
+            runnerIcons[i].setLocation(0, runnerIcons[i].getY());
+        }
     }
 
     // ── RunnerListener ───────────────────────────────────────────────────────

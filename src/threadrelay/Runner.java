@@ -5,9 +5,9 @@ import java.util.List;
 
 public class Runner implements Runnable {
 
-    public static final int SLOW    = 500;
-    public static final int REGULAR = 300;
-    public static final int FAST    = 100;
+    public static final int SLOW    = 50;
+    public static final int REGULAR = 30;
+    public static final int FAST    = 10;
 
     private final int delay;
     private final int id;
