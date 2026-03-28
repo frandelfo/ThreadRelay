@@ -2,6 +2,7 @@ package threadrelay;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.CountDownLatch;
 
 public class RelayRunners extends JFrame implements RunnerListener {
 
@@ -17,9 +18,12 @@ public class RelayRunners extends JFrame implements RunnerListener {
     final JButton startButton = new JButton("Avvia");
     final JButton stopButton  = new JButton("Ferma");
 
-    // Thread di coordinamento e runner attivo (volatile: accesso da più thread)
-    private volatile Thread coordinatorThread;
-    private volatile Thread currentRunnerThread;
+    // Thread di coordinamento e array di tutti i runner (volatile: accesso da più thread)
+    private volatile Thread   coordinatorThread;
+    private volatile Thread[] runnerThreads = new Thread[4];
+
+    // Un latch per runner: viene rilasciato quando count raggiunge 90
+    private CountDownLatch[] handoffLatches;
 
     // Velocità assegnata a ciascun runner (modificabile in futuro)
     private static final int[] DELAYS = {
@@ -121,23 +125,39 @@ public class RelayRunners extends JFrame implements RunnerListener {
         stopButton.setEnabled(true);
         resetUI();
 
-        // Thread coordinatore: esegue i runner uno alla volta in sequenza
+        // Inizializza un latch per ognuno dei primi 3 runner (il 4° non ha successore)
+        handoffLatches = new CountDownLatch[4];
+        for (int i = 0; i < 4; i++) {
+            handoffLatches[i] = new CountDownLatch(1);
+        }
+
         coordinatorThread = new Thread(() -> {
-            for (int i = 0; i < 4; i++) {
-                Runner runner = new Runner(i, DELAYS[i]);
-                runner.addListener(this);
+            // Avvia il primo runner
+            startRunner(0);
 
-                currentRunnerThread = new Thread(runner);
-                currentRunnerThread.start();
-
+            for (int i = 0; i < 3; i++) {
                 try {
-                    currentRunnerThread.join(); // attende la fine prima di passare al successivo
+                    // Attende che il runner i raggiunga count=90 prima di avviare il successivo
+                    handoffLatches[i].await();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
-                    return; // stop richiesto: esce dal ciclo
+                    interruptAllRunners();
+                    return;
+                }
+                startRunner(i + 1);
+            }
+
+            // Attende che tutti i runner terminino prima di riabilitare i pulsanti
+            for (int i = 0; i < 4; i++) {
+                try {
+                    runnerThreads[i].join();
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    interruptAllRunners();
+                    return;
                 }
             }
-            // Tutti e 4 i runner completati
+
             SwingUtilities.invokeLater(() -> {
                 startButton.setEnabled(true);
                 stopButton.setEnabled(false);
@@ -146,12 +166,24 @@ public class RelayRunners extends JFrame implements RunnerListener {
         coordinatorThread.start();
     }
 
+    private void startRunner(int i) {
+        Runner runner = new Runner(i, DELAYS[i]);
+        runner.addListener(this);
+        runnerThreads[i] = new Thread(runner);
+        runnerThreads[i].start();
+    }
+
     private void stopRelay() {
-        // Interrompe il coordinatore; il coordinatore interromperà il runner attivo
         if (coordinatorThread != null) coordinatorThread.interrupt();
-        if (currentRunnerThread != null) currentRunnerThread.interrupt();
+        interruptAllRunners();
         startButton.setEnabled(true);
         stopButton.setEnabled(false);
+    }
+
+    private void interruptAllRunners() {
+        for (Thread t : runnerThreads) {
+            if (t != null) t.interrupt();
+        }
     }
 
     private void resetUI() {
@@ -165,13 +197,17 @@ public class RelayRunners extends JFrame implements RunnerListener {
 
     @Override
     public void onCountUpdated(int runnerId, int count) {
-        // Chiamato da un thread secondario: aggiornamento UI sull'EDT
+        // Rilascia il latch al conteggio 90: sblocca il coordinatore per il prossimo runner
+        if (count == 90 && runnerId < 3) {
+            handoffLatches[runnerId].countDown();
+        }
+
+        // Aggiornamento UI sull'EDT (chiamato da thread secondario)
         SwingUtilities.invokeLater(() -> {
             valueLabels[runnerId].setText(String.valueOf(count));
 
-            // Sposta l'icona proporzionalmente al conteggio (0-99)
-            int trackWidth  = trackPanels[runnerId].getWidth();
-            int iconWidth   = runnerIcons[runnerId].getWidth();
+            int trackWidth = trackPanels[runnerId].getWidth();
+            int iconWidth  = runnerIcons[runnerId].getWidth();
             int x = (int) ((trackWidth - iconWidth) * (count / 99.0));
             int y = runnerIcons[runnerId].getY();
             runnerIcons[runnerId].setLocation(x, y);
