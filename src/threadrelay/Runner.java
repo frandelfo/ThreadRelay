@@ -3,7 +3,7 @@ package threadrelay;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Runner implements Runnable {
+public class Runner implements Runnable, IRunnerSubject {
 
     public static final int SLOW    = 50;
     public static final int REGULAR = 30;
@@ -13,7 +13,7 @@ public class Runner implements Runnable {
     private final int id;
     private int count;
 
-    private final List<RunnerListener> listeners = new ArrayList<>();
+    private final List<IRunnerListener> listeners = new ArrayList<>();
 
     public Runner(int id, int delay) {
         this.id    = id;
@@ -22,22 +22,24 @@ public class Runner implements Runnable {
 
     // ── Gestione listener ────────────────────────────────────────────────────
 
-    public void addListener(RunnerListener listener) {
+    @Override
+    public void addListener(IRunnerListener listener) {
         listeners.add(listener);
     }
 
-    public void removeListener(RunnerListener listener) {
+    @Override
+    public void removeListener(IRunnerListener listener) {
         listeners.remove(listener);
     }
 
     private void notifyCountUpdated() {
-        for (RunnerListener l : listeners) {
+        for (IRunnerListener l : listeners) {
             l.onCountUpdated(id, count);
         }
     }
 
     private void notifyFinished() {
-        for (RunnerListener l : listeners) {
+        for (IRunnerListener l : listeners) {
             l.onRunnerFinished(id);
         }
     }

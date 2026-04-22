@@ -1,6 +1,6 @@
 package threadrelay;
 
-public interface RunnerListener {
+public interface IRunnerListener {
     void onCountUpdated(int runnerId, int count);
     void onRunnerFinished(int runnerId);
 }

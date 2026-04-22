@@ -1,0 +1,48 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww11520\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Aggiungi un JFrame chiamato RelayRunners ed il codice necessario per visualizzarla all'avvio dell'applicazione\
+\
+\uc0\u10095  Nel JFrame creato, dividi lo schermo i 2 parti orizzontalmente ed a fiano di queste parti riserva uno spazio in\
+verticale.\
+Nella parte superiore inserisci i controlli necessari per far visualizzare 4 icone tenendo conto che queste icone dovranno\
+ spostarsi orizzontalmente dal margine sinistro del Frame fino al panel verticale posto alla destra\
+Nella parte inferiore predisponi 2 pulsanti per l'avvio e l'arresto dei runners\
+Nella parte verticale destra predisposni 4 label di descrizio e dei 4 runners e altre 4 label affiancate per mostrare un\
+valore numerico\
+Alline le 4 labela destra con i controli che mostrano le icone dei runners a sinistra\
+\
+\uc0\u10095  Crea una classe per l'esecuzione di un thread chimata Runner che implementa Runnable\
+Questa classe all'interno del metodo run dovr\'e0 incrementare un valore intero da 0 a 99 ponendo ad ogni conteggio un\
+ritardo (sleep) in millisecondi  valorizzato attraverso il costruttore della classe\
+Questo ritardo pu\'f2 avere 3 valori:\
+Slow = 500\
+Regular = 300\
+Fast = 100\
+\
+\uc0\u10095  Esponi il valore della variabile count della classe Runner come listener/notifier in maniera tale  da poter essere\
+sottoscritto dalla Jframe e aggiornare la Ui\
+\
+\uc0\u10095  Implementa la logica per cui alla pressione del pulsante "Start" si avvia l'esecuzione dei 4 thread in maniera\
+sincronizzata\
+Questo significa che il thread successivo pu\'f2 partire solo dopo che \'e8 terminato il thread precedente\
+Aggiorna la posizione della icona corrispondente ad ogni modifica del valore della variabile count e utilizza lo stesso\
+valore per aggiornare la label corrispondente alla icona\
+\
+\uc0\u10095  MOdifica la logica di esecuzione dei thread\
+Ora implementa che il thread successivo parte quando il valore di count del thread precedente \'e8 arrivato a 90\
+\
+\
+\uc0\u10095  Aggiungi una dropdownlist alla UI alla sinistra del pulsante "Start"\
+I valori della DropDownList devono essere "Slow", "Regular", "Fast" che coincidono con i ritardi usati dalla classe Thread\
+Usa la selezione della DropDownLIst per impostare il valore del dekay nella creazione dei thread (uguale per tutti i\
+thread)\
+\
+\uc0\u10095  Aggiungi 2 pulsanti "Sospende" e "Riprende" tra i pulsanti "Avvia" e "Ferma"\
+Premendo "Sospende" si sospende l'esecuzione del Thread\
+Premendo "Riprende" si riprende l'esecuzione del Thread\
+}

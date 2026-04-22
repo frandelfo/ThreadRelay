@@ -3,7 +3,11 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/Users/delfo/Library/CloudStorage/OneDrive-Personale/Lavori/Franchetti/Classe%204/TEPSIT/ThreadRelay/src/threadrelay/ThreadRelay.java</file>
+            <file>file:/Users/delfo/Library/CloudStorage/OneDrive-Personale/Lavori/Franchetti/Classe%204/TEPSIT/ThreadRelay-Observer/src/threadrelay/Runner.java</file>
+            <file>file:/Users/delfo/Library/CloudStorage/OneDrive-Personale/Lavori/Franchetti/Classe%204/TEPSIT/ThreadRelay-Observer/src/threadrelay/RelayRunners.java</file>
+            <file>file:/Users/delfo/Library/CloudStorage/OneDrive-Personale/Lavori/Franchetti/Classe%204/TEPSIT/ThreadRelay-Observer/src/threadrelay/ThreadRelay.java</file>
+            <file>file:/Users/delfo/Library/CloudStorage/OneDrive-Personale/Lavori/Franchetti/Classe%204/TEPSIT/ThreadRelay-Observer/src/threadrelay/IRunnerSubject.java</file>
+            <file>file:/Users/delfo/Library/CloudStorage/OneDrive-Personale/Lavori/Franchetti/Classe%204/TEPSIT/ThreadRelay-Observer/src/threadrelay/IRunnerListener.java</file>
         </group>
     </open-files>
 </project-private>

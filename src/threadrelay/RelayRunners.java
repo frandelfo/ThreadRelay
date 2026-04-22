@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.CountDownLatch;
 
-public class RelayRunners extends JFrame implements RunnerListener {
+public class RelayRunners extends JFrame implements IRunnerListener {
 
     // Corsie: layout null per permettere lo spostamento animato delle icone
     private final JPanel[]  trackPanels  = new JPanel[4];
@@ -234,7 +234,7 @@ public class RelayRunners extends JFrame implements RunnerListener {
         }
     }
 
-    // ── RunnerListener ───────────────────────────────────────────────────────
+    // ── IRunnerListener ───────────────────────────────────────────────────────
 
     @Override
     public void onCountUpdated(int runnerId, int count) {
